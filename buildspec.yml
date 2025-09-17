@@ -1,0 +1,27 @@
+version: 0.2
+env:
+  variables:
+    TASKDEF_TEMPLATE: "taskdef.json.tmpl"
+phases:
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR...
+      - REPOSITORY_URI=$(aws ecr describe-repositories --repository-names myapp --query 'repositories[0].repositoryUri' --output text --region $AWS_DEFAULT_REGION)
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $REPOSITORY_URI
+      - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+      - IMAGE_TAG=${COMMIT_HASH:=latest}
+  build:
+    commands:
+      - echo Build started on `date`
+      - echo Building the Docker image...
+      - docker build -t $REPOSITORY_URI:$IMAGE_TAG .
+  post_build:
+    commands:
+      - echo Pushing the Docker image...
+      - docker push $REPOSITORY_URI:$IMAGE_TAG
+      - echo Rendering Amazon ECS task definition...
+      - sed "s#{{IMAGE_URI}}#$REPOSITORY_URI:$IMAGE_TAG#g" $TASKDEF_TEMPLATE > taskdef.json
+artifacts:
+  files:
+    - appspec.yaml
+    - taskdef.json
