@@ -6,4 +6,4 @@ Resources:
         TaskDefinition: "taskdef.json"
         LoadBalancerInfo:
           ContainerName: "myapp-container"
-          ContainerPort: 3000
+          ContainerPort: 80
