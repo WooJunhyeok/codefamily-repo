@@ -1,25 +1,26 @@
 version: 0.2
 
 phases:
-    pre_build:
-          commands:
-                  - echo Logging in to Amazon ECR...
-                        - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
-                              - IMAGE_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$CODEBUILD_RESOLVED_SOURCE_VERSION
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR...
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
+      - IMAGE_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$CODEBUILD_RESOLVED_SOURCE_VERSION
 
-                                build:
-                                      commands:
-                                              - echo Building the Docker image...
-                                                    - docker build -t $IMAGE_REPO_NAME:$CODEBUILD_RESOLVED_SOURCE_VERSION ./app
-                                                          - docker tag $IMAGE_REPO_NAME:$CODEBUILD_RESOLVED_SOURCE_VERSION $IMAGE_URI
+  build:
+    commands:
+      - echo Building the Docker image...
+      - docker build -t $IMAGE_REPO_NAME:$CODEBUILD_RESOLVED_SOURCE_VERSION ./app
+      - docker tag $IMAGE_REPO_NAME:$CODEBUILD_RESOLVED_SOURCE_VERSION $IMAGE_URI
 
-                                                            post_build:
-                                                                  commands:
-                                                                          - echo Pushing the Docker image to ECR...
-                                                                                - docker push $IMAGE_URI
-                                                                                      - echo Writing imageDetail.json file...
-                                                                                            - printf '{"ImageURI":"%s"}' "$IMAGE_URI" > imageDetail.json
+  post_build:
+    commands:
+      - echo Pushing the Docker image to ECR...
+      - docker push $IMAGE_URI
+      - echo Writing imageDetail.json file...
+      - printf '{"ImageURI":"%s"}' "$IMAGE_URI" > imageDetail.json
 
-                                                                  artifacts:
-                                                                      files:
-                                                                            - imageDetail.json
+artifacts:
+  files:
+    - imageDetail.json
+
